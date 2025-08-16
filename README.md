@@ -53,7 +53,7 @@ A comprehensive Next.js application that analyzes team sentiment from Slack mess
 
 1. **Clone the repository:**
 ```bash
-git clone https://github.com/yourusername/employee-engagement-pulse.git
+git clone https://github.com/radiangle/employee-engagement-pulse.git
 cd employee-engagement-pulse
 ```
 
