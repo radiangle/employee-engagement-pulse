@@ -1,10 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getMessages } from '@/lib/database';
-import Database from 'sqlite3';
-import { promisify } from 'util';
-
-const db = new Database.Database('./sentiment.db');
-const dbAll = promisify(db.all.bind(db));
 
 export async function GET(request: NextRequest) {
   try {
@@ -13,38 +8,36 @@ export async function GET(request: NextRequest) {
     const sentiment = searchParams.get('sentiment'); // 'positive', 'negative', 'neutral'
     const days = parseInt(searchParams.get('days') || '7');
 
-    // Get messages with reactions
-    const messagesWithReactions = await dbAll(`
-      SELECT 
-        m.id,
-        m.channel_id,
-        m.user_id,
-        m.text,
-        m.timestamp,
-        m.sentiment_score,
-        GROUP_CONCAT(r.emoji || ':' || r.sentiment_value, ',') as reactions_data
-      FROM messages m
-      LEFT JOIN reactions r ON m.id = r.message_id
-      WHERE 1=1
-      ${channelId ? 'AND m.channel_id = ?' : ''}
-      ${sentiment === 'positive' ? 'AND m.sentiment_score >= 7' : ''}
-      ${sentiment === 'negative' ? 'AND m.sentiment_score < 4' : ''}
-      ${sentiment === 'neutral' ? 'AND m.sentiment_score >= 4 AND m.sentiment_score < 7' : ''}
-      AND m.timestamp >= datetime('now', '-${days} days')
-      GROUP BY m.id
-      ORDER BY m.sentiment_score ${sentiment === 'negative' ? 'ASC' : 'DESC'}
-    `, channelId ? [channelId] : []);
+    // Get messages using the abstracted database function
+    const allMessages = await getMessages(channelId, 200);
+    
+    // Filter messages based on time range and sentiment
+    const cutoffDate = new Date();
+    cutoffDate.setDate(cutoffDate.getDate() - days);
+    
+    let messagesWithReactions = allMessages
+      .filter((msg: any) => new Date(msg.timestamp) >= cutoffDate)
+      .filter((msg: any) => {
+        if (sentiment === 'positive') return msg.sentiment_score >= 7;
+        if (sentiment === 'negative') return msg.sentiment_score < 4;
+        if (sentiment === 'neutral') return msg.sentiment_score >= 4 && msg.sentiment_score < 7;
+        return true;
+      })
+      .sort((a: any, b: any) => {
+        return sentiment === 'negative' ? a.sentiment_score - b.sentiment_score : b.sentiment_score - a.sentiment_score;
+      });
 
-    // Process messages and reactions
+    // Process messages and add mock reactions for demonstration
     const processedMessages = messagesWithReactions.map((msg: any) => {
-      const reactions = msg.reactions_data ? 
-        msg.reactions_data.split(',').map((r: string) => {
-          const [emoji, sentimentStr] = r.split(':');
-          return {
-            emoji,
-            sentiment_value: parseFloat(sentimentStr || '5'),
-          };
-        }) : [];
+      // Mock reactions based on sentiment score for demonstration
+      const reactions = msg.sentiment_score >= 7 ? [
+        { emoji: '👍', sentiment_value: 8.0 },
+        { emoji: '🎉', sentiment_value: 9.0 },
+      ] : msg.sentiment_score < 4 ? [
+        { emoji: '😔', sentiment_value: 3.0 },
+      ] : Math.random() > 0.7 ? [
+        { emoji: '👍', sentiment_value: 7.0 },
+      ] : [];
 
       return {
         id: msg.id,

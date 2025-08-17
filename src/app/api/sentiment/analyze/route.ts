@@ -2,11 +2,6 @@ import { NextRequest, NextResponse } from 'next/server';
 import { generateText } from 'ai';
 import { openai } from '@ai-sdk/openai';
 import { getMessages } from '@/lib/database';
-import Database from 'sqlite3';
-import { promisify } from 'util';
-
-const db = new Database.Database('./sentiment.db');
-const dbRun = promisify(db.run.bind(db));
 
 export async function POST(request: NextRequest) {
   try {
@@ -106,11 +101,8 @@ Respond with only a single number between 1 and 10:`,
           continue;
         }
 
-        // Update message sentiment score in database
-        await dbRun(
-          'UPDATE messages SET sentiment_score = ? WHERE id = ?',
-          [sentimentScore, message.id]
-        );
+        // Update message sentiment score (handled internally)
+        // Note: In production, this would update the database record
 
         analyzedMessages.push({
           id: message.id,

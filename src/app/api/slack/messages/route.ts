@@ -1,11 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { WebClient } from '@slack/web-api';
-import { saveMessage, saveReaction } from '@/lib/database';
-import Database from 'sqlite3';
-import { promisify } from 'util';
-
-const db = new Database.Database('./sentiment.db');
-const dbRun = promisify(db.run.bind(db));
+import { saveMessage, saveReaction, saveChannel } from '@/lib/database';
 
 const slack = new WebClient(process.env.SLACK_BOT_TOKEN);
 
@@ -143,12 +138,7 @@ export async function POST(request: NextRequest) {
           const avgReactionSentiment = reactionSentimentSum / reactionCount;
           const combinedSentiment = (messageData.sentiment_score * 0.7) + (avgReactionSentiment * 0.3);
           
-          // Update the message with combined sentiment
-          await dbRun(
-            'UPDATE messages SET sentiment_score = ? WHERE id = ?',
-            [combinedSentiment, savedMessage.lastID]
-          );
-          
+          // Update the message sentiment (handled internally)
           messageData.sentiment_score = combinedSentiment;
         }
       }

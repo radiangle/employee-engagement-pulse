@@ -9,7 +9,7 @@ This application monitors team engagement by analyzing Slack message sentiment a
 - **Framework**: Next.js 14 with App Router & TypeScript
 - **Styling**: Tailwind CSS  
 - **Charts**: Recharts for data visualization
-- **Database**: SQLite for local demo storage
+- **Database**: Vercel KV (Redis) for production, SQLite for local development
 - **APIs**: Slack Web API, Vercel AI (OpenAI)
 - **Icons**: Lucide React
 
@@ -37,11 +37,17 @@ CHANNEL_ID_HERE=your-channel-id
 - `/api/alerts` - Alert generation and management
 - `/api/dashboard` - Dashboard data aggregation
 
-## Database Schema (SQLite)
+## Database Schema
 - **channels**: Channel info and settings
 - **messages**: Message text, timestamps, sentiment scores
 - **reactions**: Emoji reactions with sentiment values  
 - **alerts**: Generated alerts for low sentiment
+
+## Production Deployment
+✅ **Vercel KV Integration**: Serverless-compatible Redis database
+✅ **Environment Auto-Detection**: SQLite locally, KV in production
+✅ **Fallback System**: Graceful mock data when databases unavailable
+✅ **No SQLite Errors**: Resolved "SQLITE_CANTOPEN" production issues
 
 ## Usage
 1. Add Slack bot to desired channels
